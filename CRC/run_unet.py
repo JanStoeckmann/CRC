@@ -1,4 +1,5 @@
 from UNet import *
+from crc_validate_dataset import *
 from crc_dataset import *
 from label_to_img import *
 import sys
@@ -16,8 +17,8 @@ use_gpu = torch.cuda.is_available()
 
 def main():
     img_size = 128
-    epoch = 200
-    batch_size = 20
+    epoch = 3000
+    batch_size = 40
     learning_rate = 0.01
     momentum = 0.99
 
@@ -44,27 +45,24 @@ def main():
                 print("epoche:{}/{} batch:{}/{} loss:{}".format(ep,epoch-1,batch_number,train_loader.__len__()-1,loss.item()))
                 loss.backward()
                 optimizer.step()
-                if ep % 5 == 0 and batch_number==0:
+                if ep % 20 == 0 and batch_number==0:
                     batch_out_img = label_to_img(generated_batch.cpu().data, img_size, batch_size)
                     batch_out_img.save("result/gen_{}_{}.png".format(ep, batch_number))
-                if ep % 5 == 0 and batch_number == 0:
+                if ep % 20 == 0 and batch_number == 0:
                     torch.save(generator, 'model/model1.pkl')
         torch.save(generator, 'model/model1.pkl')
 
     if sys.argv[1] == 'validate':
-        validate_data = crc_Dataset(img_size=img_size, job="validate")
+        batch_size = 1
+        validate_data = crc_validate_Dataset(img_size=img_size, job="validate")
         validate_loader = data.DataLoader(dataset=validate_data, batch_size=batch_size, pin_memory=True, shuffle=True)  # shuffle=True
         generator = torch.load('model/model1.pkl')
-        loss_function = nn.MSELoss()
-        for batch_number, (input_batch, label_batch) in enumerate(validate_loader):
+        for batch_number, input_batch in enumerate(validate_loader):
             input_batch = Variable(input_batch).cuda(0)
-            label_batch = Variable(label_batch).cuda(0)
             generated_batch= generator.forward(input_batch)
-            loss = loss_function(generated_batch, label_batch)
-            print("batch:{}/{} loss:{}".format(batch_number, validate_loader.__len__()-1, loss.item()))
+            print("batch:{}/{}".format(batch_number, validate_loader.__len__()-1))
             batch_out_img = label_to_img(generated_batch.cpu().data, img_size, batch_size)
             batch_out_img.save("validate/batch_{}.png".format(batch_number))
-            #v_utils.save_image(generated_batch.cpu().data, "validate/gen_image_{}.png".format(batch_number))
 
 if __name__ == "__main__":
     main()

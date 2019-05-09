@@ -42,12 +42,10 @@ class crc_Dataset(Dataset):
         left = (width - self.img_size) / 2
         right = (width + self.img_size) / 2
         label_as_img = label_as_img.crop((left, 0, right, height))
-        pixel_list = list(label_as_img.getdata())
         width, height = label_as_img.size
         label_channel = np.zeros((height, width, 11), np.float32)
         for row in range(height):
             for col in range(width):
-                #pixel_value = pixel_list[row * width + col]
                 pixel_value = label_as_img.getpixel((col, row))
                 if pixel_value == (0, 0, 0, 255):
                     channel = 0
