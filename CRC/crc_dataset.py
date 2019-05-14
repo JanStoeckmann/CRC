@@ -11,6 +11,7 @@ import numpy as np
 class crc_Dataset(Dataset):
     def __init__(self, img_size, job):
         self.img_size = img_size
+        self.job = job
         self.img_transforms = transforms.Compose([
             transforms.Resize(size=img_size),#scallieren
             transforms.CenterCrop(img_size),#rand abschneiden
@@ -31,8 +32,27 @@ class crc_Dataset(Dataset):
         single_image_name = self.image_list[index]
         single_label_name = self.label_list[index]
         img_as_img = Image.open(single_image_name)
-        img_tensor = self.img_transforms(img_as_img)
         label_as_img = Image.open(single_label_name)
+        if self.job == "train":
+            if random.choice([True, False]):
+                img_as_img = img_as_img.transpose(Image.FLIP_LEFT_RIGHT)
+                label_as_img = label_as_img.transpose(Image.FLIP_LEFT_RIGHT)
+            degree = random.randint(0, 359)
+            img_as_img = img_as_img.rotate(degree, expand=True)
+            label_as_img = label_as_img.rotate(degree, expand=True)
+            wi, hei = img_as_img.size
+            wizoom = random.randint(0, int(0.55 * wi))
+            heizoom = int(wizoom/wi*hei)
+            newwi = wi - wizoom
+            newhei = hei - heizoom
+            left = (wi - newwi) / 2
+            top = (hei - newhei) / 2
+            right = (wi + newwi) / 2
+            bottom = (hei + newhei) / 2
+            img_as_img = img_as_img.crop((left, top, right, bottom))
+            label_as_img = label_as_img.crop((left, top, right, bottom))
+
+        img_tensor = self.img_transforms(img_as_img)
         width, height = label_as_img.size
         new_height = self.img_size
         scale = (new_height/ float(height))
@@ -40,13 +60,16 @@ class crc_Dataset(Dataset):
         label_as_img = label_as_img.resize((new_width, new_height))
         width, height = label_as_img.size
         left = (width - self.img_size) / 2
+        top = (height - new_height) / 2
         right = (width + self.img_size) / 2
-        label_as_img = label_as_img.crop((left, 0, right, height))
+        bottom = (height + new_height) / 2
+        label_as_img = label_as_img.crop((left, top, right, bottom))
         width, height = label_as_img.size
         label_channel = np.zeros((height, width, 11), np.float32)
         for row in range(height):
             for col in range(width):
                 pixel_value = label_as_img.getpixel((col, row))
+                channel = -1
                 if pixel_value == (0, 0, 0, 255):
                     channel = 0
                 elif pixel_value == (0, 255, 0, 255):
@@ -69,7 +92,8 @@ class crc_Dataset(Dataset):
                     channel = 9
                 elif pixel_value == (124, 155, 5, 255):
                     channel = 10
-                label_channel[row, col, channel] = 1
+                if channel != -1:
+                    label_channel[row, col, channel] = 1
 
         label_tensor = self.label_transforms(label_channel)
         return (img_tensor, label_tensor)
