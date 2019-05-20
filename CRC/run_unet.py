@@ -33,8 +33,8 @@ def main():
             generator = torch.load('model/'+ model)
         except:
             generator = UnetGenerator(3, 11, 64).cuda()# (3,3,64)#in_dim,out_dim,num_filter out dim = 4 oder 11
-        #loss_function = nn.MSELoss()
-        loss_function = nn.CrossEntropyLoss()
+        loss_function = nn.MSELoss()
+        #loss_function = nn.CrossEntropyLoss()
         optimizer = torch.optim.SGD(generator.parameters(), lr=learning_rate, momentum=momentum)
         #optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate)
 
