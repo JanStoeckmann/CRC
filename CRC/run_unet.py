@@ -17,8 +17,8 @@ use_gpu = torch.cuda.is_available()
 
 def main():
     img_size = 128
-    epoch = 2
-    batch_size = 20 #40
+    epoch = 5000
+    batch_size = 42
     learning_rate = 0.01
     momentum = 0.99
 
@@ -27,14 +27,14 @@ def main():
 
     if job == 'train':
         train_data = crc_Dataset(img_size=img_size, job=job)
-        train_loader = data.DataLoader(dataset = train_data, batch_size = batch_size, pin_memory=True, shuffle=True) #shuffle=True
+        train_loader = data.DataLoader(dataset = train_data, batch_size = batch_size, pin_memory=True, shuffle=True)
 
         try:
             generator = torch.load('model/'+ model)
         except:
             generator = UnetGenerator(3, 11, 64).cuda()# (3,3,64)#in_dim,out_dim,num_filter out dim = 4 oder 11
-        loss_function = nn.MSELoss()
-        #loss_function = nn.L1Loss()
+        #loss_function = nn.MSELoss()
+        loss_function = nn.CrossEntropyLoss()
         optimizer = torch.optim.SGD(generator.parameters(), lr=learning_rate, momentum=momentum)
         #optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate)
 
@@ -48,10 +48,10 @@ def main():
                 print("epoche:{}/{} batch:{}/{} loss:{}".format(ep,epoch-1,batch_number,train_loader.__len__()-1,loss.item()))
                 loss.backward()
                 optimizer.step()
-                if ep % 1 == 0 and batch_number==0:
+                '''if ep % 1 == 0 and batch_number==0:
                     batch_out_img = label_to_img(generated_batch.cpu().data, img_size, batch_size)
-                    batch_out_img.save("data/train-result/gen_{}_{}.png".format(ep, batch_number))
-                if ep % 5 == 0 and batch_number == 0:
+                    batch_out_img.save("data/train-result/gen_{}_{}.png".format(ep, batch_number))'''
+                if ep % 10 == 0 and batch_number == 0:
                     torch.save(generator, 'model/'+model)
         torch.save(generator, 'model/'+model)
 
