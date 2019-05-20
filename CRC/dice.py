@@ -2,11 +2,9 @@ import torch
 
 def dice_loss(pred, target):
     smooth = 1.
-    pred = pred.contiguous()
-    target = target.contiguous()
+    num = pred.size(0)
+    m1 = pred.view(num, -1)  # Flatten
+    m2 = target.view(num, -1)  # Flatten
+    intersection = (m1 * m2).sum()
 
-    intersection = (pred * target).sum(dim=2).sum(dim=2)
-
-    loss = (1 - ((2. * intersection + smooth) / (pred.sum(dim=2).sum(dim=2) + target.sum(dim=2).sum(dim=2) + smooth)))
-
-    return loss.mean()
+    return (2. * intersection + smooth) / (m1.sum() + m2.sum() + smooth)
