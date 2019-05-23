@@ -49,7 +49,7 @@ def main():
                 loss.backward()
                 optimizer.step()
                 '''if ep % 1 == 0 and batch_number==0:
-                    batch_out_img = label_to_img(generated_batch.cpu().data, img_size, batch_size)
+                    batch_out_img = label_to_img(generated_batch.cpu().data, img_size)
                     batch_out_img.save("data/train-result/gen_{}_{}.png".format(ep, batch_number))'''
                 if ep % 10 == 0 and batch_number == 0:
                     torch.save(generator, 'model/'+model)
@@ -71,8 +71,8 @@ def main():
             dice = dice_loss(generated_batch, label_batch.cuda()).item()
             dice_sum += abs(dice)
             print("batch:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
-            generated_out_img = label_to_img(generated_batch.cpu().data, img_size, batch_size)
-            label_out_img = label_to_img(label_batch.cpu().data, img_size, batch_size)
+            generated_out_img = label_to_img(generated_batch.cpu().data, img_size)
+            label_out_img = label_to_img(label_batch.cpu().data, img_size)
             generated_out_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
             label_out_img.save("data/validate-result/img_{}_truth.png".format(batch_number))
         avg_dice = dice_sum / validate_loader.__len__()
