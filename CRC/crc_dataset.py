@@ -61,12 +61,8 @@ class crc_Dataset(Dataset):
             background_label_as_img = Image.new("RGBA", [rotate_size,rotate_size], (0, 0, 0, 255))
             background_label_as_img.paste(label_as_img, (0,0), label_as_img)
             label_as_img = background_label_as_img
-        width, height = label_as_img.size
-        new_height = self.img_size
-        scale = (new_height/ float(height))
-        new_width = int((float(width) * float(scale)))
-        label_as_img = label_as_img.resize((new_width, new_height))
-        img_as_img = img_as_img.resize((new_width, new_height))
+        label_as_img = label_as_img.resize((self.img_size, self.img_size))
+        img_as_img = img_as_img.resize((self.img_size, self.img_size))
         img_tensor = self.transforms(img_as_img)
         width, height = label_as_img.size
         label_channel = np.zeros((height, width, 11), np.float32)
