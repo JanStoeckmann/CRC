@@ -1,5 +1,3 @@
-import torch
-
 def dice_loss(pred, target):
     smooth = 1.
     num = pred.size(0)

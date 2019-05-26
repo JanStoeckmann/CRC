@@ -1,14 +1,4 @@
-from UNet import *
-from crc_dataset import *
-from label_to_img import *
-import sys
-import torch
-import torchvision
-from torchvision import datasets, transforms
 from PIL import Image
-from os import listdir
-import random
-import time
 import numpy
 
 def label_to_img(batch, img_size): #[4, 11, 128, 128]
@@ -45,13 +35,4 @@ def label_to_img(batch, img_size): #[4, 11, 128, 128]
             elif max_channel == 10 :
                 pixel = (124, 155, 5, 255)
             out_img.putpixel((col, row), pixel)
-    #todo out_img centercrop to original shape
-    #todo scale up and paste on original image
-    '''centercrop
-            width, height = label_as_img.size
-            left = (width - self.img_size) / 2
-            top = (height - new_height) / 2
-            right = (width + self.img_size) / 2
-            bottom = (height + new_height) / 2
-            label_as_img = label_as_img.crop((left, top, right, bottom))'''
     return out_img

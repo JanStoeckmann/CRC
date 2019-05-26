@@ -1,7 +1,4 @@
 from torch.utils.data.dataset import Dataset
-import sys
-import torch
-import torchvision
 from torchvision import datasets, transforms
 from PIL import Image
 from os import listdir
