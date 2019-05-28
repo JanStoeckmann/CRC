@@ -1,16 +1,10 @@
 from UNet import *
 from crc_dataset import *
 from label_to_img import *
+from overlay import *
 from dice import *
 import sys
 import torch
-import torchvision
-from torchvision import datasets, transforms
-from PIL import Image
-from os import listdir
-import random
-import time
-import numpy
 
 
 use_gpu = torch.cuda.is_available()
@@ -73,8 +67,15 @@ def main():
         except:
             print("Error: Model doesn't exist")
             exit()
+        original_list = []
+        for ordner in listdir('data/validate'):
+            files = listdir('data/validate/' + ordner + '/left_frames')
+            for bild in files:
+                if bild.find('.png') != -1:
+                    original_list.append('data/validate/' + ordner + '/left_frames/' + bild)
         dice_sum = 0
         for batch_number, (input_batch, label_batch) in enumerate(validate_loader):
+            original = Image.open(original_list.pop(0))
             input_batch = Variable(input_batch).cuda(0)
             generated_batch= generator.forward(input_batch)
             dice = dice_loss(generated_batch, label_batch.cuda()).item()
@@ -82,8 +83,10 @@ def main():
             print("batch:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
             generated_out_img = label_to_img(generated_batch.cpu().data, img_size)
             label_out_img = label_to_img(label_batch.cpu().data, img_size)
-            generated_out_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
-            label_out_img.save("data/validate-result/img_{}_truth.png".format(batch_number))
+            overlay_img = overlay(original.copy(), generated_out_img.copy())
+            #generated_out_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
+            #label_out_img.save("data/validate-result/img_{}_truth.png".format(batch_number))
+            overlay_img.save("data/validate-result/img_{}_original.png".format(batch_number))
         avg_dice = dice_sum / validate_loader.__len__()
         print("Avgerage dice distance, 0 means perfect:", avg_dice)
 
