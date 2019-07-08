@@ -9,16 +9,3 @@ def dice_loss(pred, target):
     intersection = (m1 * m2).sum()
 
     return (2. * intersection + smooth) / (m1.sum() + m2.sum() + smooth)
-
-def multiple_dice(pred_target):
-    total = 0.
-    for [pred,target] in pred_target:
-        total += dice_loss(pred,target)
-    dice = total/len(pred_target)
-    return dice
-
-def multiple_loss(pred_target):
-    loss = 0.
-    for [pred, target] in pred_target:
-        loss += loss_function(pred, target)
-    return loss

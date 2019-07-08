@@ -10,9 +10,9 @@ import torch
 use_gpu = torch.cuda.is_available()
 
 def main():
-    img_size = 128
-    epoch = 150
-    batch_size = 1
+    img_size = 256
+    epoch = 5000
+    batch_size = 10
     learning_rate = 0.01
     momentum = 0.9
 
@@ -36,7 +36,6 @@ def main():
         #loss_function = nn.CrossEntropyLoss()
         optimizer = torch.optim.SGD(generator.parameters(), lr=learning_rate, momentum=momentum)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='max', verbose=True)
-
         for ep in range(epoch):
             dice_sum = 0
             for batch_number,(input_batch, label_1_batch, label_2_batch, label_3_batch, label_4_batch, label_5_batch, label_6_batch) in enumerate(train_loader):
@@ -50,11 +49,21 @@ def main():
                 label_6_batch = Variable(label_6_batch).cuda(0)
                 generated_1_batch, generated_2_batch, generated_3_batch, generated_4_batch, generated_5_batch, generated_6_batch = generator.forward(input_batch)
                 pred_target = [[generated_1_batch, label_1_batch], [generated_2_batch, label_2_batch], [generated_3_batch, label_3_batch], [generated_4_batch, label_4_batch], [generated_5_batch, label_5_batch], [generated_6_batch, label_6_batch]]
-                loss = multiple_loss(pred_target)
-                dice = multiple_dice(pred_target)
+                loss_1 = loss_function(generated_1_batch, label_1_batch)
+                loss_2 = loss_function(generated_2_batch, label_2_batch)
+                loss_3 = loss_function(generated_3_batch, label_3_batch)
+                loss_4 = loss_function(generated_4_batch, label_4_batch)
+                loss_5 = loss_function(generated_5_batch, label_5_batch)
+                loss_6 = loss_function(generated_6_batch, label_6_batch)
+                loss = loss_1 + loss_2 + loss_3 + loss_4 + loss_5 + loss_6
+                total = 0.
+                for [pred,target] in pred_target:
+                    total += dice_loss(pred,target.cuda()).item()
+                dice = total/6
                 dice_sum += dice
                 loss.backward()
                 optimizer.step()
+                
             avg_dice = dice_sum/train_loader.__len__()
             print("epoche:{}/{} avg dice:{}".format(ep, epoch - 1, avg_dice))
             scheduler.step(avg_dice)

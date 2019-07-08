@@ -80,7 +80,8 @@ class UnetGenerator(nn.Module):
 		trans_4 = self.trans_4(up_3)
 		concat_4 = torch.cat([trans_4,down_1],dim=1)
 		up_4 = self.up_4(concat_4)
-
+                
+                
 		out1 = self.out1(up_4)
 		out2 = self.out2(up_4)
 		out3 = self.out3(up_4)
