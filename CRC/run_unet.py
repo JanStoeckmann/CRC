@@ -11,9 +11,9 @@ use_gpu = torch.cuda.is_available()
 
 def main():
     img_size = 128
-    epoch = 5000
-    batch_size = 12
-    learning_rate = 0.1
+    epoch = 150
+    batch_size = 1
+    learning_rate = 0.01
     momentum = 0.9
 
     job = sys.argv[1]
@@ -35,18 +35,23 @@ def main():
         loss_function = nn.MSELoss()
         #loss_function = nn.CrossEntropyLoss()
         optimizer = torch.optim.SGD(generator.parameters(), lr=learning_rate, momentum=momentum)
-        #optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='max', verbose=True)
 
         for ep in range(epoch):
             dice_sum = 0
-            for batch_number,(input_batch, label_batch) in enumerate(train_loader):
+            for batch_number,(input_batch, label_1_batch, label_2_batch, label_3_batch, label_4_batch, label_5_batch, label_6_batch) in enumerate(train_loader):
                 optimizer.zero_grad()
                 input_batch = Variable(input_batch).cuda(0)
-                label_batch = Variable(label_batch).cuda(0)
-                generated_batch = generator.forward(input_batch)
-                loss = loss_function(generated_batch, label_batch)
-                dice = dice_loss(generated_batch, label_batch.cuda()).item()
+                label_1_batch = Variable(label_1_batch).cuda(0)
+                label_2_batch = Variable(label_2_batch).cuda(0)
+                label_3_batch = Variable(label_3_batch).cuda(0)
+                label_4_batch = Variable(label_4_batch).cuda(0)
+                label_5_batch = Variable(label_5_batch).cuda(0)
+                label_6_batch = Variable(label_6_batch).cuda(0)
+                generated_1_batch, generated_2_batch, generated_3_batch, generated_4_batch, generated_5_batch, generated_6_batch = generator.forward(input_batch)
+                pred_target = [[generated_1_batch, label_1_batch], [generated_2_batch, label_2_batch], [generated_3_batch, label_3_batch], [generated_4_batch, label_4_batch], [generated_5_batch, label_5_batch], [generated_6_batch, label_6_batch]]
+                loss = multiple_loss(pred_target)
+                dice = multiple_dice(pred_target)
                 dice_sum += dice
                 loss.backward()
                 optimizer.step()
@@ -74,18 +79,26 @@ def main():
                 if bild.find('.png') != -1:
                     original_list.append('data/validate/' + ordner + '/left_frames/' + bild)
         dice_sum = 0
-        for batch_number, (input_batch, label_batch) in enumerate(validate_loader):
+        for batch_number, (input_batch, label_1_batch, label_2_batch, label_3_batch, label_4_batch, label_5_batch, label_6_batch) in enumerate(validate_loader):
             original = Image.open(original_list.pop(0))
             input_batch = Variable(input_batch).cuda(0)
-            generated_batch= generator.forward(input_batch)
-            dice = dice_loss(generated_batch, label_batch.cuda()).item()
+            label_1_batch = Variable(label_1_batch).cuda(0)
+            label_2_batch = Variable(label_2_batch).cuda(0)
+            label_3_batch = Variable(label_3_batch).cuda(0)
+            label_4_batch = Variable(label_4_batch).cuda(0)
+            label_5_batch = Variable(label_5_batch).cuda(0)
+            label_6_batch = Variable(label_6_batch).cuda(0)
+            generated_1_batch, generated_2_batch, generated_3_batch, generated_4_batch, generated_5_batch, generated_6_batch = generator.forward(
+                input_batch)
+            pred_target = [[generated_1_batch, label_1_batch], [generated_2_batch, label_2_batch],
+                           [generated_3_batch, label_3_batch], [generated_4_batch, label_4_batch],
+                           [generated_5_batch, label_5_batch], [generated_6_batch, label_6_batch]]
+            dice = multiple_dice(pred_target)
             dice_sum += dice
             print("batch:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
-            generated_out_img = label_to_img(generated_batch.cpu().data, img_size)
-            label_out_img = label_to_img(label_batch.cpu().data, img_size)
+            pred_list = generated_1_batch, generated_2_batch, generated_3_batch, generated_4_batch, generated_5_batch, generated_6_batch
+            generated_out_img = label_to_img(pred_list, img_size)
             overlay_img = overlay(original.copy(), generated_out_img.copy())
-            #generated_out_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
-            #label_out_img.save("data/validate-result/img_{}_truth.png".format(batch_number))
             overlay_img.save("data/validate-result/img_{}_original.png".format(batch_number))
         avg_dice = dice_sum / validate_loader.__len__()
         print("Avgerage dice distance, 0 means perfect:", avg_dice)

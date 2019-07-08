@@ -62,7 +62,12 @@ class crc_Dataset(Dataset):
         img_as_img = img_as_img.resize((self.img_size, self.img_size))
         img_tensor = self.transforms(img_as_img)
         width, height = label_as_img.size
-        label_channel = np.zeros((height, width, 11), np.float32)
+        label_1_channel = np.zeros((height, width, 11), np.float32)
+        label_2_channel = np.zeros((height, width, 11), np.float32)
+        label_3_channel = np.zeros((height, width, 11), np.float32)
+        label_4_channel = np.zeros((height, width, 11), np.float32)
+        label_5_channel = np.zeros((height, width, 11), np.float32)
+        label_6_channel = np.zeros((height, width, 11), np.float32)
         for row in range(height):
             for col in range(width):
                 pixel_value = label_as_img.getpixel((col, row))
@@ -90,9 +95,25 @@ class crc_Dataset(Dataset):
                 elif pixel_value == (124, 155, 5, 255):
                     channel = 10
                 if channel != -1:
-                    label_channel[row, col, channel] = 1
-        label_tensor = self.transforms(label_channel)
-        return (img_tensor, label_tensor)
+                    if channel <= 5:
+                        label_1_channel[row, col, channel] = 1
+                    elif channel == 6:
+                        label_2_channel[row, col, channel] = 1
+                    elif channel == 7:
+                        label_3_channel[row, col, channel] = 1
+                    elif channel == 8:
+                        label_4_channel[row, col, channel] = 1
+                    elif channel == 9:
+                        label_5_channel[row, col, channel] = 1
+                    elif channel <= 10:
+                        label_6_channel[row, col, channel] = 1
+        label_1_tensor = self.transforms(label_1_channel)
+        label_2_tensor = self.transforms(label_2_channel)
+        label_3_tensor = self.transforms(label_3_channel)
+        label_4_tensor = self.transforms(label_4_channel)
+        label_5_tensor = self.transforms(label_5_channel)
+        label_6_tensor = self.transforms(label_6_channel)
+        return (img_tensor, label_1_tensor, label_2_tensor, label_3_tensor, label_4_tensor, label_5_tensor, label_6_tensor)
 
     def __len__(self):
         return self.data_len

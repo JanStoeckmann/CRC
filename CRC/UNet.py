@@ -31,8 +31,28 @@ class UnetGenerator(nn.Module):
 		self.trans_4 = conv_trans_block(self.num_filter*2,self.num_filter*1,act_fn)
 		self.up_4 = conv_block_2(self.num_filter*2,self.num_filter*1,act_fn)
 
-		self.out = nn.Sequential(
+		self.out1 = nn.Sequential(
 			nn.Conv2d(self.num_filter,self.out_dim,3,1,1),
+			nn.Tanh(),
+		)
+		self.out2 = nn.Sequential(
+			nn.Conv2d(self.num_filter, self.out_dim, 3, 1, 1),
+			nn.Tanh(),
+		)
+		self.out3 = nn.Sequential(
+			nn.Conv2d(self.num_filter, self.out_dim, 3, 1, 1),
+			nn.Tanh(),
+		)
+		self.out4 = nn.Sequential(
+			nn.Conv2d(self.num_filter, self.out_dim, 3, 1, 1),
+			nn.Tanh(),
+		)
+		self.out5 = nn.Sequential(
+			nn.Conv2d(self.num_filter, self.out_dim, 3, 1, 1),
+			nn.Tanh(),
+		)
+		self.out6 = nn.Sequential(
+			nn.Conv2d(self.num_filter, self.out_dim, 3, 1, 1),
 			nn.Tanh(),
 		)
 
@@ -61,7 +81,11 @@ class UnetGenerator(nn.Module):
 		concat_4 = torch.cat([trans_4,down_1],dim=1)
 		up_4 = self.up_4(concat_4)
 
-		out = self.out(up_4)
-		#out = F.softmax(out, dim=3)
+		out1 = self.out1(up_4)
+		out2 = self.out2(up_4)
+		out3 = self.out3(up_4)
+		out4 = self.out4(up_4)
+		out5 = self.out5(up_4)
+		out6 = self.out6(up_4)
 
-		return out
+		return out1, out2, out3, out4, out5, out6
