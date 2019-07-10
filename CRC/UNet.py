@@ -75,7 +75,7 @@ class UnetGenerator(nn.Module):
 		concat_4 = torch.cat([trans_4,down_1],dim=1)
 		up_4 = self.up_4(concat_4)
                 
-                soft = nn.Softmin()
+                soft = nn.Softmax()
 		out1 = soft(self.out1(up_4))
 		out2 = soft(self.out2(up_4))
 		out3 = soft(self.out3(up_4))
