@@ -32,27 +32,26 @@ class UnetGenerator(nn.Module):
 		self.up_4 = conv_block_2(self.num_filter*2,self.num_filter*1,act_fn)
 
 		self.out1 = nn.Sequential(
-			nn.Conv2d(self.num_filter,self.out_dim,3,1,1),
-			nn.Tanh(),
+			nn.Conv2d(self.num_filter,6,3,1,1),
 		)
 		self.out2 = nn.Sequential(
-			nn.Conv2d(self.num_filter, self.out_dim, 3, 1, 1),
+			nn.Conv2d(self.num_filter, 2, 3, 1, 1),
 			nn.Tanh(),
 		)
 		self.out3 = nn.Sequential(
-			nn.Conv2d(self.num_filter, self.out_dim, 3, 1, 1),
+			nn.Conv2d(self.num_filter, 2, 3, 1, 1),
 			nn.Tanh(),
 		)
 		self.out4 = nn.Sequential(
-			nn.Conv2d(self.num_filter, self.out_dim, 3, 1, 1),
+			nn.Conv2d(self.num_filter, 2, 3, 1, 1),
 			nn.Tanh(),
 		)
 		self.out5 = nn.Sequential(
-			nn.Conv2d(self.num_filter, self.out_dim, 3, 1, 1),
+			nn.Conv2d(self.num_filter, 2, 3, 1, 1),
 			nn.Tanh(),
 		)
 		self.out6 = nn.Sequential(
-			nn.Conv2d(self.num_filter, self.out_dim, 3, 1, 1),
+			nn.Conv2d(self.num_filter, 2, 3, 1, 1),
 			nn.Tanh(),
 		)
 

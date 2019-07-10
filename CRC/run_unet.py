@@ -57,7 +57,9 @@ def main():
                 loss_6 = loss_function(generated_6_batch, label_6_batch)
                 loss = loss_1 + loss_2 + loss_3 + loss_4 + loss_5 + loss_6
                 total = 0.
+                print("1:")
                 for [pred,target] in pred_target:
+                    print(dice_loss(pred,target.cuda()).item())
                     total += dice_loss(pred,target.cuda()).item()
                 dice = total/6
                 dice_sum += dice
@@ -102,7 +104,13 @@ def main():
             pred_target = [[generated_1_batch, label_1_batch], [generated_2_batch, label_2_batch],
                            [generated_3_batch, label_3_batch], [generated_4_batch, label_4_batch],
                            [generated_5_batch, label_5_batch], [generated_6_batch, label_6_batch]]
-            dice = multiple_dice(pred_target)
+            total = 0.
+            print("1:")
+            for [pred,target] in pred_target:
+                print(dice_loss(pred,target.cuda()).item())
+                total += dice_loss(pred,target.cuda()).item()
+            dice = total/6
+            dice_sum += dice
             dice_sum += dice
             print("batch:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
             pred_list = generated_1_batch, generated_2_batch, generated_3_batch, generated_4_batch, generated_5_batch, generated_6_batch

@@ -62,12 +62,12 @@ class crc_Dataset(Dataset):
         img_as_img = img_as_img.resize((self.img_size, self.img_size))
         img_tensor = self.transforms(img_as_img)
         width, height = label_as_img.size
-        label_1_channel = np.zeros((height, width, 11), np.float32)
-        label_2_channel = np.zeros((height, width, 11), np.float32)
-        label_3_channel = np.zeros((height, width, 11), np.float32)
-        label_4_channel = np.zeros((height, width, 11), np.float32)
-        label_5_channel = np.zeros((height, width, 11), np.float32)
-        label_6_channel = np.zeros((height, width, 11), np.float32)
+        label_1_channel = np.zeros((height, width, 6), np.float32)
+        label_2_channel = np.zeros((height, width, 2), np.float32)
+        label_3_channel = np.zeros((height, width, 2), np.float32)
+        label_4_channel = np.zeros((height, width, 2), np.float32)
+        label_5_channel = np.zeros((height, width, 2), np.float32)
+        label_6_channel = np.zeros((height, width, 2), np.float32)
         for row in range(height):
             for col in range(width):
                 pixel_value = label_as_img.getpixel((col, row))
@@ -96,17 +96,17 @@ class crc_Dataset(Dataset):
                     channel = 10
                 if channel != -1:
                     if channel <= 5:
-                        label_1_channel[row, col, channel] = 1
+                        label_1_channel[row, col, 1] = 1
                     elif channel == 6:
-                        label_2_channel[row, col, channel] = 1
+                        label_2_channel[row, col, 1] = 1
                     elif channel == 7:
-                        label_3_channel[row, col, channel] = 1
+                        label_3_channel[row, col, 1] = 1
                     elif channel == 8:
-                        label_4_channel[row, col, channel] = 1
+                        label_4_channel[row, col, 1] = 1
                     elif channel == 9:
-                        label_5_channel[row, col, channel] = 1
+                        label_5_channel[row, col, 1] = 1
                     elif channel <= 10:
-                        label_6_channel[row, col, channel] = 1
+                        label_6_channel[row, col, 1] = 1
         label_1_tensor = self.transforms(label_1_channel)
         label_2_tensor = self.transforms(label_2_channel)
         label_3_tensor = self.transforms(label_3_channel)

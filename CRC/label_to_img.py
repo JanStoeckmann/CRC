@@ -6,7 +6,7 @@ def label_to_img(pred_list, img_size): #[4, 11, 128, 128]
     width = img_size
     out_img = Image.new('RGBA', (width, height), (0, 0, 0, 255))
 
-    element_1 = (pred_list[0][0].cpu().data).numpy()
+    element_1 = (pred_list[0][0].cpu().data).numpy()#todo softmax
     element_2 = (pred_list[1][0].cpu().data).numpy()
     element_3 = (pred_list[2][0].cpu().data).numpy()
     element_4 = (pred_list[3][0].cpu().data).numpy()
@@ -21,6 +21,7 @@ def label_to_img(pred_list, img_size): #[4, 11, 128, 128]
                     max_channel = channel
                     max_value = element_1[channel, row, col]
             if max_channel == 0 :
+                
                 pixel =  (0, 0, 0, 255)
             elif max_channel == 1 :
                 pixel = (0, 255, 0, 255)
