@@ -12,7 +12,7 @@ use_gpu = torch.cuda.is_available()
 def main():
     img_size = 128
     epoch = 5000
-    batch_size = 12
+    batch_size = 10
     learning_rate = 0.1
     momentum = 0.9
 
@@ -46,7 +46,7 @@ def main():
                 label_batch = Variable(label_batch).cuda(0)
                 generated_batch = generator.forward(input_batch)
                 loss = loss_function(generated_batch, label_batch)
-                dice = dice_loss(generated_batch, label_batch.cuda()).item()
+                dice = dice_loss(generated_batch.cpu(),label_batch.cpu())
                 dice_sum += dice
                 loss.backward()
                 optimizer.step()
@@ -78,9 +78,9 @@ def main():
             original = Image.open(original_list.pop(0))
             input_batch = Variable(input_batch).cuda(0)
             generated_batch= generator.forward(input_batch)
-            dice = dice_loss(generated_batch, label_batch.cuda()).item()
+            dice = dice_loss(generated_batch.cpu(),label_batch.cpu())
             dice_sum += dice
-            print("batch:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
+            print("img:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
             generated_out_img = label_to_img(generated_batch.cpu().data, img_size)
             label_out_img = label_to_img(label_batch.cpu().data, img_size)
             overlay_img = overlay(original.copy(), generated_out_img.copy())
