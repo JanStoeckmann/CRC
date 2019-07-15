@@ -36,6 +36,7 @@ class crc_Dataset(Dataset):
                                               int((new_size - old_size[1]) / 2)))
         img_as_img = boarder_img_as_img
         label_as_img = boarder_label_as_img
+
         if self.job == "train":
             if random.choice([True, False]):
                 img_as_img = img_as_img.transpose(Image.FLIP_LEFT_RIGHT)
@@ -96,7 +97,7 @@ class crc_Dataset(Dataset):
                     channel = 10
                 if channel != -1:
                     if channel <= 5:
-                        label_1_channel[row, col, 1] = 1
+                        label_1_channel[row, col, channel] = 1
                     elif channel == 6:
                         label_2_channel[row, col, 1] = 1
                     elif channel == 7:
@@ -105,8 +106,22 @@ class crc_Dataset(Dataset):
                         label_4_channel[row, col, 1] = 1
                     elif channel == 9:
                         label_5_channel[row, col, 1] = 1
-                    elif channel <= 10:
+                    elif channel == 10:
                         label_6_channel[row, col, 1] = 1
+
+                    if channel > 5:
+                        label_1_channel[row, col, 0] = 1
+                    elif channel != 6:
+                        label_2_channel[row, col, 0] = 1
+                    elif channel != 7:
+                        label_3_channel[row, col, 0] = 1
+                    elif channel != 8:
+                        label_4_channel[row, col, 0] = 1
+                    elif channel != 9:
+                        label_5_channel[row, col, 0] = 1
+                    elif channel != 10:
+                        label_6_channel[row, col, 0] = 1
+
         label_1_tensor = self.transforms(label_1_channel)
         label_2_tensor = self.transforms(label_2_channel)
         label_3_tensor = self.transforms(label_3_channel)

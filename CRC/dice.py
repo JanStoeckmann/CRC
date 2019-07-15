@@ -1,11 +1,21 @@
-import torch.nn as nn
-loss_function = nn.MSELoss()
-from torch.autograd import Variable
-def dice_loss(pred, target):
-    smooth = 1.
-    num = pred.size(0)
-    m1 = pred.view(num, -1)  # Flatten
-    m2 = target.view(num, -1)  # Flatten
-    intersection = (m1 * m2).sum()
-
-    return (2. * intersection + smooth) / (m1.sum() + m2.sum() + smooth)
+import torch
+def dice_loss(predy, targety):
+    inter = 0
+    union = 0
+    m2sum = 0
+    for ele in range(len(predy)):
+        for chan in range(1, len(predy[0])):
+            pred = predy[ele][chan]
+            target = targety[ele][chan]
+            pred = (pred > 0.5).type(torch.FloatTensor)
+            num = pred.size(0)
+            m1 = pred.view(num, -1)  # Flatten
+            m2 = target.view(num, -1)  # Flatten
+            m2sum += m2.sum()
+            inter += ((m1 * m2).sum()).item()
+            union += (m1.sum() + m2.sum()).item()
+    if m2sum == 0:
+        dice = "Klasse nicht vertreten"
+    else:
+        dice = 2. * inter / union
+    return dice
