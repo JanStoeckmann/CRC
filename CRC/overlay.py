@@ -4,7 +4,7 @@ import numpy as np
 def overlay(originaly, generatedy):
     originaly = originaly.convert('RGBA')
     generatedy.putalpha(70)
-    for row in range(generatedy.size[0]):
+    for row in range(generatedy.size[0]):#todo what the fuck
         for col in range(generatedy.size[1]):
             if generatedy.getpixel((row, col)) == (0, 0, 0, 70):
                 generatedy.putpixel((row, col), (0, 0, 0, 0))

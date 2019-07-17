@@ -10,9 +10,9 @@ import torch
 use_gpu = torch.cuda.is_available()
 
 def main():
-    img_size = 128
-    epoch = 40
-    batch_size = 10
+    img_size = 512
+    epoch = 5000
+    batch_size = 2
     learning_rate = 0.1
     momentum = 0.9
 
@@ -30,46 +30,32 @@ def main():
             except:
                 pass
         except:
-            generator = UnetGenerator(3, 6, 2, 64).cuda()
+            generator = UnetGenerator(3, 11, 64).cuda()# (3,3,64)#in_dim,out_dim,num_filter out dim = 4 oder 11
             print("new model generated")
         loss_function = nn.MSELoss()
         #loss_function = nn.CrossEntropyLoss()
         optimizer = torch.optim.SGD(generator.parameters(), lr=learning_rate, momentum=momentum)
-
+        #optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='max', verbose=True)
+
         for ep in range(epoch):
-            dice_sum = 0
-            for batch_number,(input_batch, label_1_batch, label_2_batch, label_3_batch, label_4_batch, label_5_batch, label_6_batch) in enumerate(train_loader):
-                optimizer.zero_grad()
-                input_batch = Variable(input_batch).cuda(0)
-                label_1_batch = Variable(label_1_batch).cuda(0)
-                label_2_batch = Variable(label_2_batch).cuda(0)
-                label_3_batch = Variable(label_3_batch).cuda(0)
-                label_4_batch = Variable(label_4_batch).cuda(0)
-                label_5_batch = Variable(label_5_batch).cuda(0)
-                label_6_batch = Variable(label_6_batch).cuda(0)
-                [generated_1_batch, generated_2_batch, generated_3_batch, generated_4_batch, generated_5_batch, generated_6_batch] = generator.forward(input_batch)
-                pred_target = [[generated_1_batch, label_1_batch], [generated_2_batch, label_2_batch], [generated_3_batch, label_3_batch], [generated_4_batch, label_4_batch], [generated_5_batch, label_5_batch], [generated_6_batch, label_6_batch]]
-                loss_1 = loss_function(generated_1_batch, label_1_batch)
-                loss_2 = loss_function(generated_2_batch, label_2_batch)
-                loss_3 = loss_function(generated_3_batch, label_3_batch)
-                loss_4 = loss_function(generated_4_batch, label_4_batch)
-                loss_5 = loss_function(generated_5_batch, label_5_batch)
-                loss_6 = loss_function(generated_6_batch, label_6_batch)
-                loss = loss_1 + loss_2 + loss_3 + loss_4 + loss_5 + loss_6
-                total = 0.
-                weight = 0
-                for [pred, target] in pred_target:
-                    di = dice_loss(pred.cpu(), target.cpu())
+            dice_sum = 0.
+            dice_count = 0
+            for batch_number,(input_batch_1, label_batch_1, input_batch_2, label_batch_2,input_batch_3, label_batch_3,input_batch_4, label_batch_4) in enumerate(train_loader):
+                total_tensor = [[input_batch_1, label_batch_1], [input_batch_2, label_batch_2],[input_batch_3, label_batch_3],[input_batch_4, label_batch_4]]
+                for [input_batch, label_batch] in total_tensor:
+                    optimizer.zero_grad()
+                    input_batch = Variable(input_batch).cuda(0)
+                    label_batch = Variable(label_batch).cuda(0)
+                    generated_batch = generator.forward(input_batch)
+                    loss = loss_function(generated_batch, label_batch)
+                    di = dice_loss(generated_batch.cpu(),label_batch.cpu())
                     if type(di) is float:
-                        total += di * (len(pred[0] - 1))
-                        weight += len(pred[0] - 1)
-                dice = total / weight
-                dice_sum += dice
-                loss.backward()
-                optimizer.step()
-                
-            avg_dice = dice_sum/train_loader.__len__()
+                        dice_sum += di
+                        dice_count += 1
+                    loss.backward()
+                    optimizer.step()
+            avg_dice = dice_sum/dice_count
             print("epoche:{}/{} avg dice:{}".format(ep, epoch - 1, avg_dice))
             scheduler.step(avg_dice)
             if ep % 10 == 0:
@@ -93,46 +79,48 @@ def main():
                 if bild.find('.png') != -1:
                     original_list.append('data/validate/' + ordner + '/left_frames/' + bild)
         dice_sum = 0
-        for batch_number, (input_batch, label_1_batch, label_2_batch, label_3_batch, label_4_batch, label_5_batch, label_6_batch) in enumerate(validate_loader):
+
+        each_dice = np.zeros((11, 2))#channel[0-10], [dice_sum, c1]
+
+        for batch_number, (
+        input_batch_1, label_batch_1, input_batch_2, label_batch_2, input_batch_3, label_batch_3, input_batch_4,
+        label_batch_4) in enumerate(validate_loader):
+            total_tensor = [[input_batch_1, label_batch_1], [input_batch_2, label_batch_2],
+                            [input_batch_3, label_batch_3], [input_batch_4, label_batch_4]]
             original = Image.open(original_list.pop(0))
-            input_batch = Variable(input_batch).cuda(0)
-            label_1_batch = Variable(label_1_batch).cuda(0)
-            label_2_batch = Variable(label_2_batch).cuda(0)
-            label_3_batch = Variable(label_3_batch).cuda(0)
-            label_4_batch = Variable(label_4_batch).cuda(0)
-            label_5_batch = Variable(label_5_batch).cuda(0)
-            label_6_batch = Variable(label_6_batch).cuda(0)
-            generated_1_batch, generated_2_batch, generated_3_batch, generated_4_batch, generated_5_batch, generated_6_batch = generator.forward(
-                input_batch)
-            pred_target = [[generated_1_batch, label_1_batch], [generated_2_batch, label_2_batch],
-                           [generated_3_batch, label_3_batch], [generated_4_batch, label_4_batch],
-                           [generated_5_batch, label_5_batch], [generated_6_batch, label_6_batch]]
+            final = []
+            for [input_batch, label_batch] in total_tensor:
+                input_batch = Variable(input_batch).cuda(0)
+                generated_batch= generator.forward(input_batch)
+                dice = dice_loss(generated_batch.cpu(),label_batch.cpu())
+                dice_sum += dice
+                for chan in range(1,11):
+                    di = dice_each(generated_batch.cpu(), label_batch.cpu(), chan)
+                    if type(di) is float:
+                        each_dice[chan][0] += di
+                        each_dice[chan][1] += 1
 
-            total = 0.
-            weight = 0
-            print("1:")
-            for [pred,target] in pred_target:
-                di = dice_loss(pred.cpu(),target.cpu())
-                print(di)
-                if type(di) is float:
-                    total += di * (len(pred[0]-1))
-                    weight += len(pred[0]-1)
-            dice = total/weight
-            dice_sum += dice
-            print("batch:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
-            pred_list = generated_1_batch, generated_2_batch, generated_3_batch, generated_4_batch, generated_5_batch, generated_6_batch
-            gen_img, gen_img_1, gen_img_2, gen_img_3, gen_img_4, gen_img_5, gen_img_6 = label_to_img(pred_list, img_size)
-            overlay_img = overlay(original.copy(), gen_img.copy())
+
+                generated_out_img = label_to_img(generated_batch.cpu().data, img_size)
+                final.append(generated_out_img)
+            final_img = Image.new('RGBA', (2*img_size, 2*img_size))
+            final_img.paste(final[0], (0, 0))
+            final_img.paste(final[1], (img_size, 0))
+            final_img.paste(final[2], (0, img_size))
+            final_img.paste(final[3], (img_size, img_size))
+            final_img.save("data/train-result/final.png")
+            overlay_img = overlay(original.copy(), final_img.copy())
             overlay_img.save("data/validate-result/img_{}_original.png".format(batch_number))
-            gen_img_1.save("data/validate-result/img_{}_head1.png".format(batch_number))
-            gen_img_2.save("data/validate-result/img_{}_head2.png".format(batch_number))
-            gen_img_3.save("data/validate-result/img_{}_head3.png".format(batch_number))
-            gen_img_4.save("data/validate-result/img_{}_head4.png".format(batch_number))
-            gen_img_5.save("data/validate-result/img_{}_head5.png".format(batch_number))
-            gen_img_6.save("data/validate-result/img_{}_head6.png".format(batch_number))
-
+            print("img:{}/{}".format(batch_number, validate_loader.__len__() - 1))
+        print("\nErgebnis:\n")
+        for chan in range(1, 11):
+            if each_dice[chan][1] != 0:
+                avg = each_dice[chan][0] / each_dice[chan][1]
+                print("Dice Klasse", chan, ":", avg)
+            else:
+                print("Dice Klasse", chan, ": Klasse nicht vertreten")
         avg_dice = dice_sum / validate_loader.__len__()
-        print("Avgerage dice distance", avg_dice)
+        print("Dice alle Klassen :", avg_dice)
 
 if __name__ == "__main__":
     main()
