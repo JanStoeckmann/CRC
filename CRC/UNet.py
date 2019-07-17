@@ -62,6 +62,6 @@ class UnetGenerator(nn.Module):
 		up_4 = self.up_4(concat_4)
 
 		out = self.out(up_4)
-		#out = F.softmax(out, dim=3)
+		#out = F.softmax(out, dim=1)
 
 		return out

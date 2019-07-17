@@ -74,12 +74,21 @@ def main():
                 if bild.find('.png') != -1:
                     original_list.append('data/validate/' + ordner + '/left_frames/' + bild)
         dice_sum = 0
+
+        each_dice = np.zeros((11, 2))#channel[0-10], [dice_sum, c1]
+
         for batch_number, (input_batch, label_batch) in enumerate(validate_loader):
             original = Image.open(original_list.pop(0))
             input_batch = Variable(input_batch).cuda(0)
             generated_batch= generator.forward(input_batch)
             dice = dice_loss(generated_batch.cpu(),label_batch.cpu())
             dice_sum += dice
+            for chan in range(1,11):
+                di = dice_each(generated_batch.cpu(), label_batch.cpu(), chan)
+                if type(di) is float:
+                    each_dice[chan][0] += di
+                    each_dice[chan][1] += 1
+
             print("img:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
             generated_out_img = label_to_img(generated_batch.cpu().data, img_size)
             label_out_img = label_to_img(label_batch.cpu().data, img_size)
@@ -87,8 +96,15 @@ def main():
             #generated_out_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
             #label_out_img.save("data/validate-result/img_{}_truth.png".format(batch_number))
             overlay_img.save("data/validate-result/img_{}_original.png".format(batch_number))
+        print("\nErgebnis:\n")
+        for chan in range(1, 11):
+            if each_dice[chan][1] != 0:
+                avg = each_dice[chan][0] / each_dice[chan][1]
+                print("Dice Klasse", chan, ":", avg)
+            else:
+                print("Dice Klasse", chan, ": Klasse nicht vertreten")
         avg_dice = dice_sum / validate_loader.__len__()
-        print("Avgerage dice distance, 0 means perfect:", avg_dice)
+        print("Dice alle Klassen :", avg_dice)
 
 if __name__ == "__main__":
     main()

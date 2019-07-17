@@ -9,9 +9,11 @@ def label_to_img(batch, img_size): #[4, 11, 128, 128]
     for row in range(height):
         for col in range(width):
             max_channel = 0
+            max_value = element[0, row, col]
             for channel in range(11):
-                if element[channel, row, col] > element[max_channel, row, col]:
+                if element[channel, row, col] > max_value:
                     max_channel = channel
+                    max_value = element[channel, row, col]
             if max_channel == 0 :
                 pixel =  (0, 0, 0, 255)
             elif max_channel == 1 :
