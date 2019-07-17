@@ -21,7 +21,7 @@ def label_to_img(pred_list, img_size): #[4, 11, 128, 128]
             max_channel = 0
             max_value = element_1[0, row, col]
             for channel in range(1,6):
-                if element_1[channel, row, col] > element_1[max_channel, row, col]:
+                if element_1[channel, row, col] > max_value:
                     max_channel = channel
                     max_value = element_1[channel, row, col]
             if max_channel == 0 :

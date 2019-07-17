@@ -93,6 +93,8 @@ def main():
                 if bild.find('.png') != -1:
                     original_list.append('data/validate/' + ordner + '/left_frames/' + bild)
         dice_sum = 0
+        each_dice_1= np.zeros((6, 2))  # channel[0-10], [dice_sum, c1]
+        each_dice_2= np.zeros((6, 2))  # channel[0-10], [dice_sum, c1]
         for batch_number, (input_batch, label_1_batch, label_2_batch, label_3_batch, label_4_batch, label_5_batch, label_6_batch) in enumerate(validate_loader):
             original = Image.open(original_list.pop(0))
             input_batch = Variable(input_batch).cuda(0)
@@ -110,15 +112,26 @@ def main():
 
             total = 0.
             weight = 0
-            print("1:")
+            print("img", batch_number, ":")
             for [pred,target] in pred_target:
                 di = dice_loss(pred.cpu(),target.cpu())
                 print(di)
                 if type(di) is float:
                     total += di * (len(pred[0]-1))
                     weight += len(pred[0]-1)
-            dice = total/weight
+            dice = total / weight
             dice_sum += dice
+            for chan in range(1,6):
+                di = dice_each(generated_1_batch.cpu(),label_1_batch.cpu(), chan)
+                if type(di) is float:
+                    each_dice_1[chan][0] += di
+                    each_dice_1[chan][1] += 1
+            for chan in range(1,6):
+                di = dice_each(pred_target[chan][0].cpu(),pred_target[chan][1].cpu(), 1)
+                if type(di) is float:
+                    each_dice_2[chan][0] += di
+                    each_dice_2[chan][1] += 1
+
             print("batch:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
             pred_list = generated_1_batch, generated_2_batch, generated_3_batch, generated_4_batch, generated_5_batch, generated_6_batch
             gen_img, gen_img_1, gen_img_2, gen_img_3, gen_img_4, gen_img_5, gen_img_6 = label_to_img(pred_list, img_size)
@@ -130,9 +143,21 @@ def main():
             gen_img_4.save("data/validate-result/img_{}_head4.png".format(batch_number))
             gen_img_5.save("data/validate-result/img_{}_head5.png".format(batch_number))
             gen_img_6.save("data/validate-result/img_{}_head6.png".format(batch_number))
-
+        print("\nErgebnis:\n")
+        for chan in range(1, 6):
+            if each_dice_1[chan][1] != 0:
+                avg = each_dice_1[chan][0] / each_dice_1[chan][1]
+                print("Dice Klasse", chan, ":", avg)
+            else:
+                print("Dice Klasse", chan, ": Klasse nicht vertreten")
+        for chan in range(1, 6):
+            if each_dice_2[chan][1] != 0:
+                avg = each_dice_2[chan][0] / each_dice_2[chan][1]
+                print("Dice Klasse", chan+5, ":", avg)
+            else:
+                print("Dice Klasse", chan+5, ": Klasse nicht vertreten")
         avg_dice = dice_sum / validate_loader.__len__()
-        print("Avgerage dice distance", avg_dice)
+        print("Dice alle Klassen :", avg_dice)
 
 if __name__ == "__main__":
     main()
