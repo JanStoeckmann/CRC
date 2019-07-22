@@ -10,8 +10,8 @@ import torch
 use_gpu = torch.cuda.is_available()
 
 def main():
-    img_size = 128
-    epoch = 40
+    img_size = 256
+    epoch = 5000
     batch_size = 10
     learning_rate = 0.1
     momentum = 0.9
@@ -93,10 +93,13 @@ def main():
                 if bild.find('.png') != -1:
                     original_list.append('data/validate/' + ordner + '/left_frames/' + bild)
         dice_sum = 0
+        dice_counter = 0
         each_dice_1= np.zeros((6, 2))  # channel[0-10], [dice_sum, c1]
         each_dice_2= np.zeros((6, 2))  # channel[0-10], [dice_sum, c1]
         for batch_number, (input_batch, label_1_batch, label_2_batch, label_3_batch, label_4_batch, label_5_batch, label_6_batch) in enumerate(validate_loader):
-            original = Image.open(original_list.pop(0))
+            origi = original_list.pop(0)
+            print(origi)
+            original = Image.open(origi)
             input_batch = Variable(input_batch).cuda(0)
             label_1_batch = Variable(label_1_batch).cuda(0)
             label_2_batch = Variable(label_2_batch).cuda(0)
@@ -115,12 +118,14 @@ def main():
             print("img", batch_number, ":")
             for [pred,target] in pred_target:
                 di = dice_loss(pred.cpu(),target.cpu())
-                print(di)
+                #print(di)
                 if type(di) is float:
                     total += di * (len(pred[0]-1))
                     weight += len(pred[0]-1)
-            dice = total / weight
-            dice_sum += dice
+            if weight != 0:
+                dice = total / weight
+                dice_sum += dice
+                dice_counter += 1
             for chan in range(1,6):
                 di = dice_each(generated_1_batch.cpu(),label_1_batch.cpu(), chan)
                 if type(di) is float:
@@ -131,12 +136,13 @@ def main():
                 if type(di) is float:
                     each_dice_2[chan][0] += di
                     each_dice_2[chan][1] += 1
-
             print("batch:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
             pred_list = generated_1_batch, generated_2_batch, generated_3_batch, generated_4_batch, generated_5_batch, generated_6_batch
             gen_img, gen_img_1, gen_img_2, gen_img_3, gen_img_4, gen_img_5, gen_img_6 = label_to_img(pred_list, img_size)
             overlay_img = overlay(original.copy(), gen_img.copy())
-            overlay_img.save("data/validate-result/img_{}_original.png".format(batch_number))
+            overlay_img.save("data/validate-result/img_{}_overlay.png".format(batch_number))
+            gen_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
+            original.save("data/validate-result/img_{}_original.png".format(batch_number))
             gen_img_1.save("data/validate-result/img_{}_head1.png".format(batch_number))
             gen_img_2.save("data/validate-result/img_{}_head2.png".format(batch_number))
             gen_img_3.save("data/validate-result/img_{}_head3.png".format(batch_number))
@@ -156,7 +162,7 @@ def main():
                 print("Dice Klasse", chan+5, ":", avg)
             else:
                 print("Dice Klasse", chan+5, ": Klasse nicht vertreten")
-        avg_dice = dice_sum / validate_loader.__len__()
+        avg_dice = dice_sum / dice_counter
         print("Dice alle Klassen :", avg_dice)
 
 if __name__ == "__main__":
