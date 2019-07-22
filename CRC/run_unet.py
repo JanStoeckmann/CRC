@@ -93,9 +93,10 @@ def main():
 
             print("img:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
             generated_out_img = label_to_img(generated_batch.cpu().data, img_size)
+            label_out_img = label_to_img(label_batch.cpu().data, img_size)
             overlay_img = overlay(original.copy(), generated_out_img.copy())
             overlay_img.save("data/validate-result/img_{}_overlay.png".format(batch_number))
-            generated_out_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
+            gen_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
             original.save("data/validate-result/img_{}_original.png".format(batch_number))
         print("\nErgebnis:\n")
         for chan in range(1, 11):
