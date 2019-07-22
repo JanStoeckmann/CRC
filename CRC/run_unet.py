@@ -12,7 +12,7 @@ use_gpu = torch.cuda.is_available()
 def main():
     img_size = 512
     epoch = 5000
-    batch_size = 2
+    batch_size = 3
     learning_rate = 0.1
     momentum = 0.9
 
@@ -58,9 +58,9 @@ def main():
             avg_dice = dice_sum/dice_count
             print("epoche:{}/{} avg dice:{}".format(ep, epoch - 1, avg_dice))
             scheduler.step(avg_dice)
-            if ep % 10 == 0:
-                torch.save(generator, 'model/'+model)
-                print("model saved")
+            #if ep % 10 == 0:
+            torch.save(generator, 'model/'+model)
+            print("model saved")
         torch.save(generator, 'model/'+model)
 
     if job == 'validate':
@@ -78,8 +78,8 @@ def main():
             for bild in files:
                 if bild.find('.png') != -1:
                     original_list.append('data/validate/' + ordner + '/left_frames/' + bild)
-        dice_sum = 0
-
+        dice_sum = 0.
+        dice_count = 0
         each_dice = np.zeros((11, 2))#channel[0-10], [dice_sum, c1]
 
         for batch_number, (
@@ -87,13 +87,17 @@ def main():
         label_batch_4) in enumerate(validate_loader):
             total_tensor = [[input_batch_1, label_batch_1], [input_batch_2, label_batch_2],
                             [input_batch_3, label_batch_3], [input_batch_4, label_batch_4]]
-            original = Image.open(original_list.pop(0))
+            origi = original_list.pop(0)
+            print(origi)
+            original = Image.open(origi)
             final = []
             for [input_batch, label_batch] in total_tensor:
                 input_batch = Variable(input_batch).cuda(0)
                 generated_batch= generator.forward(input_batch)
-                dice = dice_loss(generated_batch.cpu(),label_batch.cpu())
-                dice_sum += dice
+                di = dice_loss(generated_batch.cpu(),label_batch.cpu())
+                if type(di) is float:
+                    dice_sum += di
+                    dice_count += 1
                 for chan in range(1,11):
                     di = dice_each(generated_batch.cpu(), label_batch.cpu(), chan)
                     if type(di) is float:
@@ -110,7 +114,9 @@ def main():
             final_img.paste(final[3], (img_size, img_size))
             final_img.save("data/train-result/final.png")
             overlay_img = overlay(original.copy(), final_img.copy())
-            overlay_img.save("data/validate-result/img_{}_original.png".format(batch_number))
+            overlay_img.save("data/validate-result/img_{}_overlay.png".format(batch_number))
+            gen_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
+            original.save("data/validate-result/img_{}_original.png".format(batch_number))
             print("img:{}/{}".format(batch_number, validate_loader.__len__() - 1))
         print("\nErgebnis:\n")
         for chan in range(1, 11):
@@ -119,7 +125,7 @@ def main():
                 print("Dice Klasse", chan, ":", avg)
             else:
                 print("Dice Klasse", chan, ": Klasse nicht vertreten")
-        avg_dice = dice_sum / validate_loader.__len__()
+        avg_dice = dice_sum/dice_count
         print("Dice alle Klassen :", avg_dice)
 
 if __name__ == "__main__":
