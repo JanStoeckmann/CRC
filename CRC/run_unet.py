@@ -10,9 +10,9 @@ import torch
 use_gpu = torch.cuda.is_available()
 
 def main():
-    img_size = 128
+    img_size = 256
     epoch = 5000
-    batch_size = 10
+    batch_size = 14
     learning_rate = 0.1
     momentum = 0.9
 
@@ -78,7 +78,9 @@ def main():
         each_dice = np.zeros((11, 2))#channel[0-10], [dice_sum, c1]
 
         for batch_number, (input_batch, label_batch) in enumerate(validate_loader):
-            original = Image.open(original_list.pop(0))
+            origi = original_list.pop(0)
+            print(origi)
+            original = Image.open(origi)
             input_batch = Variable(input_batch).cuda(0)
             generated_batch= generator.forward(input_batch)
             dice = dice_loss(generated_batch.cpu(),label_batch.cpu())
@@ -91,11 +93,10 @@ def main():
 
             print("img:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
             generated_out_img = label_to_img(generated_batch.cpu().data, img_size)
-            label_out_img = label_to_img(label_batch.cpu().data, img_size)
             overlay_img = overlay(original.copy(), generated_out_img.copy())
-            #generated_out_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
-            #label_out_img.save("data/validate-result/img_{}_truth.png".format(batch_number))
-            overlay_img.save("data/validate-result/img_{}_original.png".format(batch_number))
+            overlay_img.save("data/validate-result/img_{}_overlay.png".format(batch_number))
+            generated_out_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
+            original.save("data/validate-result/img_{}_original.png".format(batch_number))
         print("\nErgebnis:\n")
         for chan in range(1, 11):
             if each_dice[chan][1] != 0:
